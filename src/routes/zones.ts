@@ -1,4 +1,4 @@
-import { Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 
 const getZones = (req: Request, res: Response) => {
   res.send("getting zones");
@@ -20,8 +20,12 @@ const deleteZone = (req: Request, res: Response) => {
   res.send(`deleting zone ${req.params.zoneId}`);
 };
 
-export const setupZoneRoutes = () => {
+export const setupZoneRoutes = (auth0Middleware: {
+  (req: Request, res: Response, next: NextFunction): Promise<void>;
+}) => {
   const router = Router({ mergeParams: true });
+
+  router.use(auth0Middleware);
 
   router.get("/", getZones);
   router.post("/", createZone);
