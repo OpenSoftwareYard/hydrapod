@@ -11,26 +11,35 @@ type SetupOrganizationRoutesArgs = {
   apiKeyPrefix: string;
 };
 
-export const setupOrganizationRoutes = (args: SetupOrganizationRoutesArgs) => {
-  const router = Router({ mergeParams: true });
+export class OrganizationRoutes {
+  private readonly args: SetupOrganizationRoutesArgs;
+  public readonly router: Router;
 
-  const createApiKeyRoute = async (req: JWTRequest, res: Response) => {
-    const userId = req.auth?.sub;
-    const currentOrg = await args.prisma.organization.findMany({
+  constructor(args: SetupOrganizationRoutesArgs) {
+    this.args = args;
+
+    this.router = Router({ mergeParams: true });
+    this.router.use(args.auth0Middleware);
+
+    this.router.post("/:organizationId/apiKeys", this.createApiKey);
+  }
+
+  private createApiKey = async (req: JWTRequest, res: Response) => {
+    const currentOrg = await this.args.prisma.organization.findMany({
       where: {
         users: {
           some: {
-            externalUserId: userId,
+            externalUserId: req.auth?.sub,
           },
         },
       },
     });
 
     const key = await createApiKey({
-      prefix: args.apiKeyPrefix,
+      prefix: this.args.apiKeyPrefix,
       organizationId: currentOrg[0].id,
       name: req.body["name"],
-      prisma: args.prisma,
+      prisma: this.args.prisma,
     });
 
     res.send({
@@ -40,10 +49,4 @@ export const setupOrganizationRoutes = (args: SetupOrganizationRoutesArgs) => {
       organizationId: key.organizationId,
     });
   };
-
-  router.use(args.auth0Middleware);
-
-  router.post("/:organizationId/apiKeys", createApiKeyRoute);
-
-  return router;
-};
+}

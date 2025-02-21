@@ -1,37 +1,110 @@
+import { PrismaClient } from "@prisma/client";
+import { Request as JWTRequest } from "express-jwt";
 import { NextFunction, Request, Response, Router } from "express";
 
-const getZones = (req: Request, res: Response) => {
-  res.send("getting zones");
+type SetupZoneRoutesArgs = {
+  multipleAuthMiddleware: {
+    (req: Request, res: Response, next: NextFunction): Promise<void>;
+  };
+  prisma: PrismaClient;
 };
 
-const createZone = (req: Request, res: Response) => {
-  res.send("creating zone");
-};
+enum ZoneStatus {
+  Unscheduled = "unscheduled",
+  Running = "running",
+  Stopped = "stopped",
+  Scheduling = "scheduling",
+}
 
-const startZone = (req: Request, res: Response) => {
-  res.send(`starting zone ${req.params.zoneId}`);
-};
+export class ZoneRoutes {
+  private readonly args: SetupZoneRoutesArgs;
+  public readonly router: Router;
 
-const stopZone = (req: Request, res: Response) => {
-  res.send(`stopping zone ${req.params.zoneId}`);
-};
+  constructor(args: SetupZoneRoutesArgs) {
+    this.args = args;
 
-const deleteZone = (req: Request, res: Response) => {
-  res.send(`deleting zone ${req.params.zoneId}`);
-};
+    this.router = Router({ mergeParams: true });
+    this.router.use(args.multipleAuthMiddleware);
 
-export const setupZoneRoutes = (auth0Middleware: {
-  (req: Request, res: Response, next: NextFunction): Promise<void>;
-}) => {
-  const router = Router({ mergeParams: true });
+    this.router.get("/", this.getZones);
+    this.router.post("/", this.createZone);
+    this.router.post("/:zoneId/start", this.startZone);
+    this.router.post("/:zoneId/stop", this.stopZone);
+    this.router.delete("/:zoneId", this.deleteZone);
+  }
 
-  router.use(auth0Middleware);
+  private getOrgId = async (req: JWTRequest) => {
+    return (
+      (req.headers["organizationId"] as string) ||
+      (
+        await this.args.prisma.organization.findFirst({
+          where: {
+            users: {
+              some: {
+                externalUserId: req.auth?.sub,
+              },
+            },
+          },
+        })
+      )?.id
+    );
+  };
 
-  router.get("/", getZones);
-  router.post("/", createZone);
-  router.post("/:zoneId/start", startZone);
-  router.post("/:zoneId/stop", stopZone);
-  router.delete("/:zoneId", deleteZone);
+  private getZones = async (req: JWTRequest, res: Response) => {
+    const orgId = await this.getOrgId(req);
 
-  return router;
-};
+    if (!orgId) {
+      res.status(404).send();
+      return;
+    }
+
+    const zones = await this.args.prisma.zone.findMany({
+      where: {
+        organizationId: orgId,
+      },
+    });
+
+    res.send(zones);
+  };
+
+  private createZone = async (req: Request, res: Response) => {
+    const orgId = await this.getOrgId(req);
+
+    if (!orgId) {
+      res.status(404).send();
+      return;
+    }
+
+    const zone = await this.args.prisma.zone.create({
+      data: {
+        organizationId: orgId,
+        brand: req.body["brand"],
+        imageUri: req.body["imageUri"],
+        cpuCount: req.body["cpuCount"],
+        ramGB: req.body["ramGB"],
+        diskGB: req.body["diskGB"],
+        status: ZoneStatus.Unscheduled,
+        services: {
+          create: req.body["services"],
+        },
+      },
+      include: {
+        services: true,
+      },
+    });
+
+    res.send(zone);
+  };
+
+  private startZone = async (req: Request, res: Response) => {
+    res.send(`starting zone ${req.params.zoneId}`);
+  };
+
+  private stopZone = (req: Request, res: Response) => {
+    res.send(`stopping zone ${req.params.zoneId}`);
+  };
+
+  private deleteZone = (req: Request, res: Response) => {
+    res.send(`deleting zone ${req.params.zoneId}`);
+  };
+}

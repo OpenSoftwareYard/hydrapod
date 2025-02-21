@@ -1,27 +1,38 @@
+import { PrismaClient } from "@prisma/client";
 import { Request, Response, Router, NextFunction } from "express";
 
-const getNodes = (req: Request, res: Response) => {
-  res.send(req.headers["userId"] || req.headers["organizationId"]);
+type SetupNodeRoutesArgs = {
+  multipleAuthMiddleware: {
+    (req: Request, res: Response, next: NextFunction): Promise<void>;
+  };
+  prisma: PrismaClient;
 };
 
-const getZonesForNode = (req: Request, res: Response) => {
-  res.send(`getting zones for node ${req.params.nodeId}`);
-};
+export class NodeRoutes {
+  private readonly args: SetupNodeRoutesArgs;
+  public readonly router: Router;
 
-const updateNodeKey = (req: Request, res: Response) => {
-  res.send(`updating node key ${req.params.nodeId}`);
-};
+  constructor(args: SetupNodeRoutesArgs) {
+    this.args = args;
 
-export const setupNodeRoutes = (auth0Middleware: {
-  (req: Request, res: Response, next: NextFunction): Promise<void>;
-}) => {
-  const router = Router({ mergeParams: true });
+    this.router = Router({ mergeParams: true });
+    this.router.use(args.multipleAuthMiddleware);
 
-  router.use(auth0Middleware);
+    this.router.get("/", this.getNodes);
+    this.router.get("/:nodeId/zones", this.getZonesForNode);
+    this.router.put("/:nodeId/updateKey", this.updateNodeKey);
+  }
 
-  router.get("/", getNodes);
-  router.get("/:nodeId/zones", getZonesForNode);
-  router.put("/:nodeId/updateKey", updateNodeKey);
+  private getNodes = async (req: Request, res: Response) => {
+    const nodes = await this.args.prisma.node.findMany();
+    res.send(nodes);
+  };
 
-  return router;
-};
+  private getZonesForNode = (req: Request, res: Response) => {
+    res.send(`getting zones for node ${req.params.nodeId}`);
+  };
+
+  private updateNodeKey = (req: Request, res: Response) => {
+    res.send(`updating node key ${req.params.nodeId}`);
+  };
+}

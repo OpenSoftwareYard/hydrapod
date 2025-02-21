@@ -42,7 +42,7 @@ model Zone {
   organization Organization @relation(fields: [organizationId], references: [id])
   organizationId String
   node Node? @relation(fields: [nodeId], references: [id])
-  nodeId String
+  nodeId String?
   services Service[]
 }
 

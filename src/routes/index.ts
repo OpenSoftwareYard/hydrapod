@@ -1,7 +1,7 @@
 import { Express, NextFunction, Request, Response } from "express";
-import { setupZoneRoutes } from "./zones";
-import { setupNodeRoutes } from "./nodes";
-import { setupOrganizationRoutes } from "./organizations";
+import { ZoneRoutes } from "./zones";
+import { NodeRoutes } from "./nodes";
+import { OrganizationRoutes } from "./organizations";
 import { PrismaClient } from "@prisma/client";
 
 type SetupRoutesArgs = {
@@ -32,18 +32,25 @@ export const setupRoutes = (args: SetupRoutesArgs) => {
   };
 
   // Zone routes
-  const zoneRouter = setupZoneRoutes(multipleAuthMiddleware);
+  const zoneRouter = new ZoneRoutes({
+    multipleAuthMiddleware,
+    prisma: args.prisma,
+  }).router;
+
   args.app.use("/zones", zoneRouter);
 
   // Node routes
-  const nodeRouter = setupNodeRoutes(multipleAuthMiddleware);
+  const nodeRouter = new NodeRoutes({
+    multipleAuthMiddleware,
+    prisma: args.prisma,
+  }).router;
   args.app.use("/nodes", nodeRouter);
 
   // Organization routes
-  const organizationRouter = setupOrganizationRoutes({
+  const organizationRouter = new OrganizationRoutes({
     auth0Middleware: args.auth0Middleware,
     prisma: args.prisma,
     apiKeyPrefix: args.apiKeyPrefix,
-  });
+  }).router;
   args.app.use("/organizations", organizationRouter);
 };
