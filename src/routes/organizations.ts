@@ -1,13 +1,13 @@
-import { PrismaClient } from "@prisma/client";
 import { Request as JWTRequest } from "express-jwt";
 import { Request, Response, Router, NextFunction } from "express";
-import { createApiKey } from "../security";
+import { createApiKey } from "../auth";
+import type { ExtendedPrismaClient } from "../db";
 
 type SetupOrganizationRoutesArgs = {
   auth0Middleware: {
     (req: Request, res: Response, next: NextFunction): Promise<void>;
   };
-  prisma: PrismaClient;
+  prisma: ExtendedPrismaClient;
   apiKeyPrefix: string;
 };
 

@@ -14,7 +14,7 @@ model Node {
   id String @id @default(uuid())
   address String
   port Int
-  connectionKey Bytes
+  connectionKey String /// @encrypted
   connectionUser String
   externalNetworkDevice String
   internalStubDevice String

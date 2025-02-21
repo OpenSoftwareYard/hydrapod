@@ -1,12 +1,12 @@
-import { PrismaClient } from "@prisma/client";
 import { Request as JWTRequest } from "express-jwt";
 import { NextFunction, Request, Response, Router } from "express";
+import type { ExtendedPrismaClient } from "../db";
 
 type SetupZoneRoutesArgs = {
   multipleAuthMiddleware: {
     (req: Request, res: Response, next: NextFunction): Promise<void>;
   };
-  prisma: PrismaClient;
+  prisma: ExtendedPrismaClient;
 };
 
 enum ZoneStatus {

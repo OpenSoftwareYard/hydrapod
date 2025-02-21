@@ -1,11 +1,11 @@
-import { PrismaClient } from "@prisma/client";
 import { Request, Response, Router, NextFunction } from "express";
+import type { ExtendedPrismaClient } from "../db";
 
 type SetupNodeRoutesArgs = {
   multipleAuthMiddleware: {
     (req: Request, res: Response, next: NextFunction): Promise<void>;
   };
-  prisma: PrismaClient;
+  prisma: ExtendedPrismaClient;
 };
 
 export class NodeRoutes {
@@ -19,8 +19,8 @@ export class NodeRoutes {
     this.router.use(args.multipleAuthMiddleware);
 
     this.router.get("/", this.getNodes);
+    this.router.post("/", this.createNode);
     this.router.get("/:nodeId/zones", this.getZonesForNode);
-    this.router.put("/:nodeId/updateKey", this.updateNodeKey);
   }
 
   private getNodes = async (req: Request, res: Response) => {
@@ -29,10 +29,28 @@ export class NodeRoutes {
   };
 
   private getZonesForNode = (req: Request, res: Response) => {
+    // TODO: use the ssh client to get the zones for the node
     res.send(`getting zones for node ${req.params.nodeId}`);
   };
 
-  private updateNodeKey = (req: Request, res: Response) => {
-    res.send(`updating node key ${req.params.nodeId}`);
+  private createNode = async (req: Request, res: Response) => {
+    const node = await this.args.prisma.node.create({
+      data: {
+        address: req.body["address"],
+        port: req.body["port"],
+        connectionKey: req.body["connectionKey"],
+        connectionUser: req.body["connectionUser"],
+        externalNetworkDevice: req.body["externalNetworkDevice"],
+        internalStubDevice: req.body["internalStubDevice"],
+        defRouter: req.body["defRouter"],
+        privateZoneNetwork: req.body["privateZoneNetwork"],
+        zoneBasePath: req.body["zoneBasePath"],
+        totalCpu: req.body["totalCpu"],
+        totalRamGB: req.body["totalRamGB"],
+        totalDiskGB: req.body["totalDiskGB"],
+      },
+    });
+
+    res.send(node);
   };
 }

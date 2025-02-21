@@ -2,7 +2,7 @@ import { Express, NextFunction, Request, Response } from "express";
 import { ZoneRoutes } from "./zones";
 import { NodeRoutes } from "./nodes";
 import { OrganizationRoutes } from "./organizations";
-import { PrismaClient } from "@prisma/client";
+import type { ExtendedPrismaClient } from "../db";
 
 type SetupRoutesArgs = {
   app: Express;
@@ -12,7 +12,7 @@ type SetupRoutesArgs = {
   apiKeyMiddleware: {
     (req: Request, res: Response, next: NextFunction): Promise<void>;
   };
-  prisma: PrismaClient;
+  prisma: ExtendedPrismaClient;
   apiKeyPrefix: string;
 };
 
