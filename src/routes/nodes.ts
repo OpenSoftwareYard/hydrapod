@@ -1,7 +1,7 @@
 import { Request, Response, Router, NextFunction } from "express";
 
 const getNodes = (req: Request, res: Response) => {
-  res.send("getting nodes");
+  res.send(req.headers["userId"] || req.headers["organizationId"]);
 };
 
 const getZonesForNode = (req: Request, res: Response) => {

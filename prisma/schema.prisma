@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Node {
+  id String @id @default(uuid())
+  address String
+  port Int
+  connectionKey Bytes
+  connectionUser String
+  externalNetworkDevice String
+  internalStubDevice String
+  defRouter String
+  privateZoneNetwork String
+  zoneBasePath String
+  totalCpu Int
+  totalRamGB Int
+  totalDiskGB Int
+  zones Zone[]
+}
+
+model Zone {
+  id String @id @default(uuid())
+  path String?
+  brand String
+  imageUri String?
+  ipType String?
+  vnic String?
+  internalIpAddress String?
+  cpuCount Int
+  ramGB Int
+  diskGB Int
+  status String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  node Node? @relation(fields: [nodeId], references: [id])
+  nodeId String
+  services Service[]
+}
+
+model Service {
+  id String @id @default(uuid())
+  name String
+  description String
+  workingDir String
+  command String
+  arguments String?
+  user String
+  environment String?
+  zone Zone @relation(fields: [zoneId], references: [id])
+  zoneId String
+}
+
+model User {
+  id String @id @default(uuid())
+  externalUserId String
+  organizations Organization[]
+}
+
+model Organization {
+  id String @id @default(uuid())
+  users User[]
+  zones Zone[]
+  apiKeys ApiKey[]
+}
+
+model ApiKey {
+  id String @id @default(uuid())
+  name String
+  hash String
+  expiresAt DateTime
+  organization Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+}
