@@ -1,6 +1,7 @@
 import { Request as JWTRequest } from "express-jwt";
 import { NextFunction, Request, Response, Router } from "express";
 import type { ExtendedPrismaClient } from "../db";
+import { ZoneStatus } from "../types";
 
 type SetupZoneRoutesArgs = {
   multipleAuthMiddleware: {
@@ -8,13 +9,6 @@ type SetupZoneRoutesArgs = {
   };
   prisma: ExtendedPrismaClient;
 };
-
-enum ZoneStatus {
-  Unscheduled = "unscheduled",
-  Running = "running",
-  Stopped = "stopped",
-  Scheduling = "scheduling",
-}
 
 export class ZoneRoutes {
   private readonly args: SetupZoneRoutesArgs;

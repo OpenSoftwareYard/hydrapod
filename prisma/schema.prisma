@@ -25,6 +25,8 @@ model Node {
   totalRamGB Int
   totalDiskGB Int
   zones Zone[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model Zone {
@@ -44,6 +46,8 @@ model Zone {
   node Node? @relation(fields: [nodeId], references: [id])
   nodeId String?
   services Service[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model Service {
@@ -57,12 +61,16 @@ model Service {
   environment String?
   zone Zone @relation(fields: [zoneId], references: [id])
   zoneId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model User {
   id String @id @default(uuid())
   externalUserId String
   organizations Organization[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model Organization {
@@ -70,6 +78,8 @@ model Organization {
   users User[]
   zones Zone[]
   apiKeys ApiKey[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model ApiKey {
@@ -79,4 +89,6 @@ model ApiKey {
   expiresAt DateTime
   organization Organization @relation(fields: [organizationId], references: [id])
   organizationId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
