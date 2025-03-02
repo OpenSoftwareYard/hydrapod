@@ -54,5 +54,44 @@ export class NodeConnector {
     return JSON.parse(result.stdout);
   }
 
-  async createVnic(node: Node, vnic: Vnic) {}
+  async createVnic(node: Node, vnic: Vnic) {
+    const ssh = await this.connect(node);
+    const createVnicScript = await fs.promises.readFile(
+      path.join(__dirname, "..", "scripts", "CreateVnic.sh"),
+      "utf-8",
+    );
+
+    const result = await ssh.execCommand(
+      createVnicScript.replaceAll("$1", vnic.over).replaceAll("$2", vnic.link),
+    );
+    ssh.dispose();
+
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    console.log(result.stdout);
+
+    return vnic;
+  }
+
+  async deleteVnic(node: Node, vnicName: string) {
+    const ssh = await this.connect(node);
+    const deleteVnicScript = await fs.promises.readFile(
+      path.join(__dirname, "..", "scripts", "DeleteVnic.sh"),
+      "utf-8",
+    );
+
+    const result = await ssh.execCommand(
+      deleteVnicScript.replaceAll("$1", vnicName),
+    );
+
+    ssh.dispose();
+
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    return vnicName;
+  }
 }
