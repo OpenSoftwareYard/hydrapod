@@ -1,11 +1,13 @@
 import { Request, Response, Router, NextFunction } from "express";
 import type { ExtendedPrismaClient } from "../db";
+import { NodeConnector } from "../node-connector";
 
 type SetupNodeRoutesArgs = {
   multipleAuthMiddleware: {
     (req: Request, res: Response, next: NextFunction): Promise<void>;
   };
   prisma: ExtendedPrismaClient;
+  nodeConnector: NodeConnector;
 };
 
 export class NodeRoutes {
@@ -28,9 +30,23 @@ export class NodeRoutes {
     res.send(nodes);
   };
 
-  private getZonesForNode = (req: Request, res: Response) => {
-    // TODO: use the ssh client to get the zones for the node
-    res.send(`getting zones for node ${req.params.nodeId}`);
+  private getZonesForNode = async (req: Request, res: Response) => {
+    const node = await this.args.prisma.node.findUnique({
+      where: {
+        id: req.params.nodeId,
+      },
+      omit: {
+        connectionKey: false,
+      },
+    });
+
+    if (!node) {
+      res.status(404).send();
+      return;
+    }
+
+    const zones = await this.args.nodeConnector.getZones(node);
+    res.send(zones);
   };
 
   private createNode = async (req: Request, res: Response) => {
