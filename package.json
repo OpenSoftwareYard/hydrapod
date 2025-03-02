@@ -7,7 +7,7 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "format": "prettier --write src/"
   },
   "repository": {
@@ -34,6 +34,8 @@
     "prettier": "^3.5.1",
     "prisma": "^6.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7",
+    "vitest-mock-extended": "^3.0.1"
   }
 }

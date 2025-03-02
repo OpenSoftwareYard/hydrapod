@@ -97,7 +97,7 @@ export const placeUnscheduledZone = async (args: PlaceUnscheduledZonesArgs) => {
  * @param usedIPs - Set of IP addresses already in use
  * @returns The next available IP address as a string, or null if no available IPs
  */
-const getNextAvailableAddress = (
+export const getNextAvailableAddress = (
   cidr: string,
   usedIPs: Set<string>,
 ): string | null => {
@@ -158,14 +158,14 @@ const getNextAvailableAddress = (
  * @param num - Numeric representation of an IP address
  * @returns IP address in string format (e.g. "192.168.1.1")
  */
-function numToIPString(num: number): string {
+const numToIPString = (num: number): string => {
   return [
     (num >>> 24) & 255,
     (num >>> 16) & 255,
     (num >>> 8) & 255,
     num & 255,
   ].join(".");
-}
+};
 
 type AllocateZoneToOptimalNodeArgs = {
   prisma: ExtendedPrismaClient;
@@ -173,12 +173,7 @@ type AllocateZoneToOptimalNodeArgs = {
   zone: Zone;
 };
 
-const findOptimalNode = async (args: AllocateZoneToOptimalNodeArgs) => {
-  if (!args.zone.imageUri) {
-    console.log(`Zone ${args.zone.id} does not have an imageUri`);
-    return;
-  }
-
+export const findOptimalNode = async (args: AllocateZoneToOptimalNodeArgs) => {
   const allNodesWithUsage = await args.prisma.node.findMany({
     include: {
       zones: true,
