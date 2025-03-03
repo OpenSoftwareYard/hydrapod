@@ -1,14 +1,17 @@
-import type { Zone } from "@prisma/client";
+import type { Prisma, Zone } from "@prisma/client";
 import type { ExtendedPrismaClient } from "./db";
 import { ZoneStatus } from "./types";
+import { PhysicalZone, shortenLinkName } from "./node-connector/models";
+import { NodeConnector } from "./node-connector";
 
 type PlaceUnscheduledZonesArgs = {
-  zone: Zone;
   prisma: ExtendedPrismaClient;
-  sshClient: any;
+  nodeConnector: NodeConnector;
 };
 
-export const placeUnscheduledZone = async (args: PlaceUnscheduledZonesArgs) => {
+export const placeUnscheduledZones = async (
+  args: PlaceUnscheduledZonesArgs,
+) => {
   const firstUnscheduledZone = await args.prisma.zone.findFirst({
     where: {
       status: ZoneStatus.Unscheduled,
@@ -16,6 +19,9 @@ export const placeUnscheduledZone = async (args: PlaceUnscheduledZonesArgs) => {
     },
     orderBy: {
       updatedAt: "asc",
+    },
+    include: {
+      services: true,
     },
   });
 
@@ -33,62 +39,118 @@ export const placeUnscheduledZone = async (args: PlaceUnscheduledZonesArgs) => {
     },
   });
 
-  console.log(`Scheduling zone ${schedulingZone.id}`);
-  const node = await findOptimalNode({
-    prisma: args.prisma,
-    sshClient: args.sshClient,
-    zone: schedulingZone,
-  });
+  try {
+    console.log(`Scheduling zone ${schedulingZone.id}`);
+    const node = await findOptimalNode({
+      prisma: args.prisma,
+      zone: schedulingZone,
+    });
 
-  if (!node) {
-    console.log(`No node found for zone ${schedulingZone.id}`);
-    return;
+    if (!node) {
+      console.log(`No node found for zone ${schedulingZone.id}`);
+      return;
+    }
+
+    console.log(`Found node ${node.id} for zone ${schedulingZone.id}`);
+
+    const usedAddresses = new Set(
+      node.zones
+        .filter((zone) => zone.internalIpAddress)
+        .map((zone) => zone.internalIpAddress!),
+    );
+    // Get next available IP address from using the CIDR block in node.privateZoneNetwork
+    const nextAvailableAddress = getNextAvailableAddress(
+      node.privateZoneNetwork,
+      usedAddresses,
+    );
+
+    if (!nextAvailableAddress) {
+      console.log(`No available IP addresses in node ${node.id}`);
+      return;
+    }
+
+    console.log(
+      `Found available IP address ${nextAvailableAddress} for zone ${schedulingZone.id}`,
+    );
+
+    const vnic = {
+      link: shortenLinkName(firstUnscheduledZone.id),
+      over: node.internalStubDevice,
+    };
+
+    let createdVnic;
+
+    try {
+      createdVnic = await args.nodeConnector.createVnic(node, vnic);
+    } catch (error) {
+      const deletedVnic = await args.nodeConnector.deleteVnic(node, vnic.link);
+      throw error;
+    }
+
+    const zonePath = `${node.zoneBasePath}/${firstUnscheduledZone.id}`;
+    const ipType = "exclusive";
+
+    const zoneToCreate: PhysicalZone = {
+      autoboot: "false",
+      bootargs: "",
+      zonename: firstUnscheduledZone.id,
+      zonepath: zonePath,
+      brand: firstUnscheduledZone.brand,
+      "ip-type": ipType,
+      "capped-cpu": {
+        ncpus: firstUnscheduledZone.cpuCount,
+      },
+      "capped-memory": {
+        physical: `${firstUnscheduledZone.ramGB}G`,
+      },
+      net: [
+        {
+          physical: createdVnic.link,
+          "allowed-address": `${nextAvailableAddress}/${node.privateZoneNetwork.split("/")[1]}`,
+          defrouter: node.defRouter,
+        },
+      ],
+      "fs-allowed": "",
+      hostid: "",
+      limitpriv: "",
+      pool: "",
+      "scheduling-class": "",
+      resolvers: ["1.1.1.1", "1.0.0.1"],
+    };
+
+    const physicallyCreatedZone = await args.nodeConnector.createZone(
+      node,
+      zoneToCreate,
+      firstUnscheduledZone.imageUri!,
+      firstUnscheduledZone.services,
+    );
+
+    const updatedZone = await args.prisma.zone.update({
+      where: {
+        id: schedulingZone.id,
+      },
+      data: {
+        nodeId: node.id,
+        internalIpAddress: nextAvailableAddress,
+        status: ZoneStatus.Stopped,
+      },
+    });
+
+    console.log(
+      `Scheduled zone ${physicallyCreatedZone.zonename} on node ${node.id}`,
+    );
+  } catch (error) {
+    console.log("Failed to schedule zone on node");
+    console.log(error);
+    const unscheduledZone = await args.prisma.zone.update({
+      where: {
+        id: firstUnscheduledZone.id,
+      },
+      data: {
+        status: ZoneStatus.Unscheduled,
+      },
+    });
   }
-
-  console.log(`Found node ${node.id} for zone ${schedulingZone.id}`);
-
-  const usedAddresses = new Set(
-    node.zones
-      .filter((zone) => zone.internalIpAddress)
-      .map((zone) => zone.internalIpAddress!),
-  );
-  // Get next available IP address from using the CIDR block in node.privateZoneNetwork
-  const nextAvailableAddress = getNextAvailableAddress(
-    node.privateZoneNetwork,
-    usedAddresses,
-  );
-
-  if (!nextAvailableAddress) {
-    console.log(`No available IP addresses in node ${node.id}`);
-    return;
-  }
-
-  console.log(
-    `Found available IP address ${nextAvailableAddress} for zone ${schedulingZone.id}`,
-  );
-
-  const updatedZone = await args.prisma.zone.update({
-    where: {
-      id: schedulingZone.id,
-    },
-    data: {
-      nodeId: node.id,
-      internalIpAddress: nextAvailableAddress,
-    },
-  });
-
-  // Actually schedule the zone on the node
-  // TODO: Implement this
-
-  console.log(`Scheduled zone ${updatedZone.id} on node ${node.id}`);
-  const runningZone = await args.prisma.zone.update({
-    where: {
-      id: updatedZone.id,
-    },
-    data: {
-      status: ZoneStatus.Running,
-    },
-  });
 };
 
 /**
@@ -169,7 +231,6 @@ const numToIPString = (num: number): string => {
 
 type AllocateZoneToOptimalNodeArgs = {
   prisma: ExtendedPrismaClient;
-  sshClient: any;
   zone: Zone;
 };
 
@@ -177,6 +238,9 @@ export const findOptimalNode = async (args: AllocateZoneToOptimalNodeArgs) => {
   const allNodesWithUsage = await args.prisma.node.findMany({
     include: {
       zones: true,
+    },
+    omit: {
+      connectionKey: false,
     },
   });
 

@@ -22,6 +22,7 @@
   "homepage": "https://github.com/OpenSoftwareYard/hydrapod#readme",
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "croner": "^9.0.0",
     "express": "^5.0.0",
     "express-jwt": "^8.5.1",
     "jwks-rsa": "^3.1.0",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
+    "@types/ssh2": "^1.15.4",
     "nodemon": "^3.1.9",
     "prettier": "^3.5.1",
     "prisma": "^6.4.1",
