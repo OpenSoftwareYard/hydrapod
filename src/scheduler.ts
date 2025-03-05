@@ -133,6 +133,10 @@ export const placeUnscheduledZones = async (
         nodeId: node.id,
         internalIpAddress: nextAvailableAddress,
         status: ZoneStatus.Stopped,
+        path: physicallyCreatedZone.zonepath,
+        vnic: physicallyCreatedZone.net[0].physical,
+        ipType: physicallyCreatedZone["ip-type"],
+        brand: physicallyCreatedZone.brand,
       },
     });
 
@@ -148,6 +152,7 @@ export const placeUnscheduledZones = async (
       },
       data: {
         status: ZoneStatus.Unscheduled,
+        nodeId: null,
       },
     });
   }
