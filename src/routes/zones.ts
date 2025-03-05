@@ -56,6 +56,12 @@ export class ZoneRoutes {
       where: {
         organizationId: orgId,
       },
+      orderBy: {
+        updatedAt: "asc",
+      },
+      include: {
+        services: true,
+      },
     });
 
     res.send(zones);
