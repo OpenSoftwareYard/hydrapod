@@ -10,7 +10,9 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      beforeEnter: authGuard,
+      beforeEnter: async (to) => {
+        const auth = await authGuard(to)
+      },
     },
     {
       path: '/callback',

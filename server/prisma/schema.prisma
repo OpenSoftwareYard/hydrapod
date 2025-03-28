@@ -75,6 +75,7 @@ model User {
 
 model Organization {
   id String @id @default(uuid())
+  name String
   users User[]
   zones Zone[]
   apiKeys ApiKey[]

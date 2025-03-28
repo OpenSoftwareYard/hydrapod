@@ -21,23 +21,35 @@ export class OrganizationRoutes {
     this.router = Router({ mergeParams: true });
     this.router.use(args.auth0Middleware);
 
+    this.router.get("/", this.getOrganizations);
     this.router.post("/:organizationId/apiKeys", this.createApiKey);
   }
 
-  private createApiKey = async (req: JWTRequest, res: Response) => {
-    const currentOrg = await this.args.prisma.organization.findMany({
+  private getOrgsForUser = async (userId?: string) => {
+    const orgs = await this.args.prisma.organization.findMany({
       where: {
         users: {
           some: {
-            externalUserId: req.auth?.sub,
+            externalUserId: userId,
           },
         },
       },
     });
 
+    return orgs
+  }
+
+  private getOrganizations = async (req: JWTRequest, res: Response) => {
+    const orgs = await this.getOrgsForUser(req.auth?.sub);
+    res.send(orgs);
+  }
+
+  private createApiKey = async (req: JWTRequest, res: Response) => {
+    const orgs = await this.getOrgsForUser(req.auth?.sub);
+
     const key = await createApiKey({
       prefix: this.args.apiKeyPrefix,
-      organizationId: currentOrg[0].id,
+      organizationId: orgs[0].id,
       name: req.body["name"],
       prisma: this.args.prisma,
     });

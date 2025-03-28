@@ -16,6 +16,16 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+
+import { store } from "@/lib/store";
+import { useAuth0 } from "@auth0/auth0-vue";
+
+const { getAccessTokenSilently } = useAuth0();
+
+getAccessTokenSilently().then((token) => {
+  store.getUserOrgs(token);
+});
+
 </script>
 
 <template>
@@ -43,7 +53,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
       </header>
       <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div class="aspect-video rounded-xl bg-muted/50" />
+          <div class="aspect-video rounded-xl bg-muted/50">{{ store.userOrgs }}</div>
           <div class="aspect-video rounded-xl bg-muted/50" />
           <div class="aspect-video rounded-xl bg-muted/50" />
         </div>

@@ -5,6 +5,7 @@ import { createAuth0 } from '@auth0/auth0-vue'
 
 import App from './App.vue'
 import router from './router'
+import { store } from './lib/store'
 
 const app = createApp(App)
 
@@ -19,6 +20,8 @@ app.use(
       audience: 'https://chyve-ct.opensoftwareyard.com',
     },
   }),
-)
+);
+
+store.apiUrl = "https://osy-devenv-vm:3001";
 
 app.mount('#app')
