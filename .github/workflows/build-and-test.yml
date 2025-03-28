@@ -9,9 +9,12 @@ env:
   PRISMA_FIELD_ENCRYPTION_KEY: k1.aesgcm256.Na1nXXvVio37H5ZEBGmMv1ey2tSq62RLZ1oQfHyZXVc=
   DATABASE_URL: file:./dev.db
 jobs:
-  build-and-test:
+  build-and-test-server:
     name: Build app
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
