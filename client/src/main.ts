@@ -20,8 +20,8 @@ app.use(
       audience: 'https://chyve-ct.opensoftwareyard.com',
     },
   }),
-);
+)
 
-store.apiUrl = "https://osy-devenv-vm:3001";
+store.apiUrl = 'https://osy-devenv-vm:3001'
 
 app.mount('#app')

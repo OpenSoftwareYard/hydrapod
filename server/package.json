@@ -8,8 +8,8 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "test": "vitest run",
-    "format": "prettier --write src/ .github/ test/",
-    "lint": "prettier --check src/ .github/ test/"
+    "format": "prettier --write src/ ../.github/ test/",
+    "lint": "prettier --check src/ ../.github/ test/"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/OpenSoftwareYard/hydrapod#readme",
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "croner": "^9.0.0",
     "express": "^5.0.0",

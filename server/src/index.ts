@@ -14,10 +14,8 @@ const app = express();
 const port = 3001;
 
 const apiKeyPrefix = "hyp_";
-app.use(cors({
-  origin: ["https://osy-devenv-vm:5173"]
-}));
 app.use(express.json());
+app.use(cors());
 
 app.get("/", async (req, res) => {
   res.send("Hello world! This is a change!");
@@ -45,11 +43,9 @@ const schedulerJob = new Cron("*/30 * * * * *", async () => {
 
 const httpsOptions = {
   key: fs.readFileSync("./security/key.pem"),
-  cert: fs.readFileSync("./security/cert.pem")
-}
+  cert: fs.readFileSync("./security/cert.pem"),
+};
 
-const server = https.createServer(httpsOptions, app).listen(port, () =>{
+const server = https.createServer(httpsOptions, app).listen(port, () => {
   console.log(`Example app listening on port ${port}`);
-
-})
-
+});

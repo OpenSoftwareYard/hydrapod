@@ -22,6 +22,7 @@ export class OrganizationRoutes {
     this.router.use(args.auth0Middleware);
 
     this.router.get("/", this.getOrganizations);
+    this.router.post("/", this.createOrganization);
     this.router.post("/:organizationId/apiKeys", this.createApiKey);
   }
 
@@ -36,13 +37,46 @@ export class OrganizationRoutes {
       },
     });
 
-    return orgs
-  }
+    return orgs;
+  };
 
   private getOrganizations = async (req: JWTRequest, res: Response) => {
     const orgs = await this.getOrgsForUser(req.auth?.sub);
     res.send(orgs);
-  }
+  };
+
+  private createOrganization = async (req: JWTRequest, res: Response) => {
+    const userId = req.auth?.sub;
+    if (!userId) {
+      res.status(401).send();
+    }
+    let user = await this.args.prisma.user.findFirst({
+      where: {
+        externalUserId: userId!,
+      },
+    });
+
+    if (!user) {
+      user = await this.args.prisma.user.create({
+        data: {
+          externalUserId: userId!,
+        },
+      });
+    }
+
+    const createdOrg = await this.args.prisma.organization.create({
+      data: {
+        name: req.body["name"],
+        users: {
+          connect: {
+            id: user.id,
+          },
+        },
+      },
+    });
+
+    res.send(createdOrg);
+  };
 
   private createApiKey = async (req: JWTRequest, res: Response) => {
     const orgs = await this.getOrgsForUser(req.auth?.sub);
