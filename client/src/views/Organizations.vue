@@ -5,30 +5,11 @@
         <h1 class="text-3xl font-bold">Organizations</h1>
         <p class="text-muted-foreground mt-1">Select an organization or create a new one</p>
       </div>
-      <Dialog v-model:open="isDialogOpen">
-        <DialogTrigger :as-child="true">
-          <Button>
-            <Plus class="mr-2 h-4 w-4" />
-            Create Organization
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a new organization</DialogTitle>
-          </DialogHeader>
-          <form @submit.prevent="handleCreateOrg">
-            <div class="grid gap-4 py-4">
-              <div class="grid gap-2">
-                <Label for="name">Organization name</Label>
-                <Input id="name" v-model="newOrgName" placeholder="My Organization" required />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Create Organization</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateOrganizationDialog
+        v-model:open="isDialogOpen"
+        :show-trigger="true"
+        @organization-created="onOrganizationCreated"
+      />
     </div>
 
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3" v-if="store.userOrgs.length > 0">
@@ -63,7 +44,8 @@
           </CardContent>
           <CardFooter>
             <Button variant="ghost" class="w-full justify-between">
-              Select <ArrowRight class="h-4 w-4" />
+              Select
+              <ArrowRight class="h-4 w-4" />
             </Button>
           </CardFooter>
         </Card>
@@ -76,11 +58,14 @@
       <h2 class="mt-6 text-xl font-semibold">No Organizations</h2>
       <p class="mt-2 text-muted-foreground">You are not a member of any organizations yet.</p>
       <div class="mt-6">
-        <Dialog v-model:open="isDialogOpen">
-          <DialogTrigger :as-child="true">
+        <CreateOrganizationDialog
+          v-model:open="isDialogOpen"
+          @organization-created="onOrganizationCreated"
+        >
+          <template #trigger>
             <Button>Create Your First Organization</Button>
-          </DialogTrigger>
-        </Dialog>
+          </template>
+        </CreateOrganizationDialog>
       </div>
     </Card>
   </div>
@@ -94,16 +79,9 @@ import CardDescription from '@/components/ui/card/CardDescription.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 import CardHeader from '@/components/ui/card/CardHeader.vue'
 import CardTitle from '@/components/ui/card/CardTitle.vue'
-import Dialog from '@/components/ui/dialog/Dialog.vue'
-import DialogContent from '@/components/ui/dialog/DialogContent.vue'
-import DialogFooter from '@/components/ui/dialog/DialogFooter.vue'
-import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
-import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
-import DialogTrigger from '@/components/ui/dialog/DialogTrigger.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Label from '@/components/ui/label/Label.vue'
+import CreateOrganizationDialog from '@/components/CreateOrganizationDialog.vue'
 import { store } from '@/lib/store'
-import { ArrowRight, Building, Plus, Users } from 'lucide-vue-next'
+import { ArrowRight, Building, Users } from 'lucide-vue-next'
 import { ref } from 'vue'
 
 import { useAuth0 } from '@auth0/auth0-vue'
@@ -112,16 +90,12 @@ const { getAccessTokenSilently } = useAuth0()
 let token: string | undefined
 
 const isDialogOpen = ref(false)
-const newOrgName = ref('')
 
-async function handleCreateOrg() {
-  if (!token) {
-    return false
+function onOrganizationCreated() {
+  // Refresh the organizations list
+  if (token) {
+    store.getUserOrgs(token)
   }
-  const org = await store.createOrg(token, newOrgName.value)
-  isDialogOpen.value = false
-
-  return true
 }
 
 getAccessTokenSilently().then((accessToken) => {
