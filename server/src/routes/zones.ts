@@ -38,6 +38,7 @@ export class ZoneRoutes {
                 externalUserId: req.auth?.sub,
               },
             },
+            id: req.params["orgId"],
           },
         })
       )?.id

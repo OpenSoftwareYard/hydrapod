@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@auth0/auth0-vue": "^2.4.0",
+    "@tanstack/vue-table": "^8.21.3",
     "@vueuse/core": "^13.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

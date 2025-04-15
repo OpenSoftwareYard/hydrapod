@@ -14,64 +14,66 @@ import {
 } from '@/components/ui/sidebar/index'
 
 import {
-  AudioWaveform,
   BookOpen,
   Bot,
-  Command,
+  Computer,
   Frame,
   GalleryVerticalEnd,
   Map,
   PieChart,
   Settings2,
-  SquareTerminal,
 } from 'lucide-vue-next'
+
+import { useAuth0 } from '@auth0/auth0-vue'
+import { store } from '@/lib/store'
+import { computed, reactive } from 'vue'
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const { user, getAccessTokenSilently } = useAuth0()
+
+let token: string | undefined
+
+getAccessTokenSilently().then((accessToken) => {
+  token = accessToken
+  store.getUserOrgs(token).then(() => {})
+})
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon',
 })
 
+const teams = computed(() => {
+  return store.userOrgs.map((org) => ({
+    name: org.name,
+    logo: GalleryVerticalEnd,
+    plan: 'Startup',
+    id: org.id,
+  }))
+})
+
+const activeTeam = computed(() => {
+  return teams.value.find((team) => {
+    return team.id == route.params.orgId
+  })
+})
+
 // This is sample data.
-const data = {
+const data = reactive({
   user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
+    name: user.value!.name!,
+    email: user.value!.email!,
+    avatar: user.value!.picture!,
   },
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ],
   navMain: [
     {
-      title: 'Playground',
+      title: 'Compute',
       url: '#',
-      icon: SquareTerminal,
+      icon: Computer,
       isActive: true,
       items: [
         {
-          title: 'History',
-          url: '#',
-        },
-        {
-          title: 'Starred',
-          url: '#',
-        },
-        {
-          title: 'Settings',
-          url: '#',
+          title: 'Instances',
+          url: `/organizations/${route.params.orgId}/instances`,
         },
       ],
     },
@@ -158,13 +160,13 @@ const data = {
       icon: Map,
     },
   ],
-}
+})
 </script>
 
 <template>
   <Sidebar v-bind="props">
     <SidebarHeader>
-      <TeamSwitcher :teams="data.teams" />
+      <TeamSwitcher :teams="teams" :active-team="activeTeam" />
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="data.navMain" />

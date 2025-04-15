@@ -17,18 +17,26 @@ import {
 } from '@/components/ui/sidebar'
 import { ChevronsUpDown, Plus } from 'lucide-vue-next'
 
-import { type Component, ref } from 'vue'
+import { type Component, computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+type Team = {
+  id: string
+  name: string
+  logo: Component
+  plan: string
+}
 
 const props = defineProps<{
-  teams: {
-    name: string
-    logo: Component
-    plan: string
-  }[]
+  teams: Team[]
+  activeTeam?: Team
 }>()
 
+const activeTeam = ref({})
+
 const { isMobile } = useSidebar()
-const activeTeam = ref(props.teams[0])
 </script>
 
 <template>
@@ -43,13 +51,13 @@ const activeTeam = ref(props.teams[0])
             <div
               class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"
             >
-              <component :is="activeTeam.logo" class="size-4" />
+              <component :is="props.activeTeam?.logo" class="size-4" />
             </div>
             <div class="grid flex-1 text-left text-sm leading-tight">
               <span class="truncate font-semibold">
-                {{ activeTeam.name }}
+                {{ props.activeTeam?.name }}
               </span>
-              <span class="truncate text-xs">{{ activeTeam.plan }}</span>
+              <span class="truncate text-xs">{{ props.activeTeam?.plan }}</span>
             </div>
             <ChevronsUpDown class="ml-auto" />
           </SidebarMenuButton>
