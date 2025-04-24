@@ -87,4 +87,33 @@ export const store = reactive({
 
     return apiKey
   },
+  async createZone(
+    token: string,
+    orgId: string,
+    zoneData: {
+      brand: string
+      imageUri: string
+      cpuCount: number
+      ramGB: number
+      diskGB: number
+      services?: any[]
+    },
+  ) {
+    const res = await fetch(`${this.apiUrl}/zones`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...zoneData,
+        orgId,
+      }),
+    })
+
+    const zone: Zone = await res.json()
+    this.orgZones.push(zone)
+
+    return zone
+  },
 })
