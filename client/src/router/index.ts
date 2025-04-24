@@ -5,6 +5,7 @@ import Callback from '@/views/Callback.vue'
 import Organizations from '@/views/Organizations.vue'
 import AppLayout from '@/layouts/App.vue'
 import Instances from '@/views/Instances.vue'
+import ApiKeys from '@/views/ApiKeys.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,13 @@ const router = createRouter({
       name: 'orgInstances',
       meta: { layout: AppLayout },
       component: Instances,
+      beforeEnter: authGuard,
+    },
+    {
+      path: '/organizations/:orgId/api-keys',
+      name: 'orgApiKeys',
+      meta: { layout: AppLayout },
+      component: ApiKeys,
       beforeEnter: authGuard,
     },
   ],

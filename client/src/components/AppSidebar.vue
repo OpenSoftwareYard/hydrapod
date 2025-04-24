@@ -77,6 +77,18 @@ const data = reactive({
         },
       ],
     },
+    {
+      title: 'Settings',
+      url: '#',
+      icon: Settings2,
+      isActive: false,
+      items: [
+        {
+          title: 'API Keys',
+          url: `/organizations/${route.params.orgId}/api-keys`,
+        },
+      ],
+    },
   ],
 })
 </script>

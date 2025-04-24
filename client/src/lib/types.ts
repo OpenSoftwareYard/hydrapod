@@ -12,3 +12,10 @@ export type Zone = {
   diskGB: number
   status: string
 }
+
+export type ApiKey = {
+  key: string
+  name: string
+  expiresAt: Date
+  organizationId: string
+}
