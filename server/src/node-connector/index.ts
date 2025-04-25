@@ -20,6 +20,23 @@ export class NodeConnector {
     return ssh;
   }
 
+  /**
+   * Ping a node to check if it's reachable via SSH
+   * @param node The node to ping
+   * @returns true if the node is reachable, throws an error otherwise
+   */
+  async ping(node: Node): Promise<boolean> {
+    try {
+      const ssh = await this.connect(node);
+      ssh.dispose();
+      return true;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to connect to node ${node.id}: ${errorMessage}`);
+    }
+  }
+
   async getZones(node: Node) {
     const ssh = await this.connect(node);
     const getZonesScript = await fs.promises.readFile(

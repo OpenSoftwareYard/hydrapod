@@ -14,11 +14,41 @@ type NodeOperation = (args: {
   node: Node;
 }) => Promise<void>;
 
+export type NodeHealth = "online" | "offline";
+
+// Function to check SSH connectivity and update node health
+async function checkNodeHealth({
+  prisma,
+  nodeConnector,
+  node,
+}: {
+  prisma: ExtendedPrismaClient;
+  nodeConnector: NodeConnector;
+  node: Node;
+}) {
+  let health: NodeHealth = "offline";
+  try {
+    await nodeConnector.ping(node); // Should throw if not reachable
+    health = "online";
+  } catch (e) {
+    health = "offline";
+  }
+  if (node.health !== health) {
+    await prisma.node.update({
+      where: { id: node.id },
+      data: { health },
+    });
+  }
+}
+
 export const nodeMonitor = async (args: NodeMonitorArgs) => {
   const { prisma, nodeConnector } = args;
 
   // List of operations to perform on each node
   const operations: NodeOperation[] = [
+    async ({ prisma, nodeConnector, node }) => {
+      await checkNodeHealth({ prisma, nodeConnector, node });
+    },
     async ({ prisma, nodeConnector, node }) => {
       await checkZoneStatuses({ prisma, nodeConnector, node });
     },

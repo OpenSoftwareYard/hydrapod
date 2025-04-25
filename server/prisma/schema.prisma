@@ -24,6 +24,7 @@ model Node {
   totalCpu Int
   totalRamGB Int
   totalDiskGB Int
+  health String @default("offline") // "online" or "offline"
   zones Zone[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())

@@ -1,4 +1,4 @@
-import type { Prisma, Zone } from "@prisma/client";
+import type { Prisma, Zone, Node } from "@prisma/client";
 import type { ExtendedPrismaClient } from "./db";
 import { ZoneStatus } from "./types";
 import { shortenLinkName } from "./node-connector/models";
@@ -265,6 +265,8 @@ export const findOptimalNode = async (args: AllocateZoneToOptimalNodeArgs) => {
 
   const filteredNodes = nodesWithResources.filter((node) => {
     return (
+      // Only consider online nodes
+      node.health === "online" &&
       node.usedCPU + args.zone.cpuCount <= node.totalCpu &&
       node.usedRam + args.zone.ramGB <= node.totalRamGB &&
       node.usedDisk + args.zone.diskGB <= node.totalDiskGB
