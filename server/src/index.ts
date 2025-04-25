@@ -5,9 +5,11 @@ import { client } from "./db";
 import { apiKeyMiddleware, auth0Middleware } from "./auth";
 import { NodeConnector } from "./node-connector";
 import { placeUnscheduledZones } from "./scheduler";
+import { checkZoneStatuses } from "./zone-status-checker";
 import cors from "cors";
 import fs from "fs";
 import https from "https";
+import { nodeMonitor } from "./node-monitor";
 
 const prisma = client;
 const app = express();
@@ -39,6 +41,17 @@ const schedulerJob = new Cron("*/30 * * * * *", async () => {
     nodeConnector,
   });
   console.log("---Finished placing unscheduled zones---");
+});
+
+// Cron job to check the status of zones and update the database
+// Runs every minute
+const nodeMonitorJob = new Cron("0 * * * * *", async () => {
+  console.log("---Starting node monitor---");
+  await nodeMonitor({
+    prisma,
+    nodeConnector,
+  });
+  console.log("---Finished node monitor---");
 });
 
 const httpsOptions = {

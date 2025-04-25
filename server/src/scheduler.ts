@@ -1,7 +1,8 @@
 import type { Prisma, Zone } from "@prisma/client";
 import type { ExtendedPrismaClient } from "./db";
 import { ZoneStatus } from "./types";
-import { PhysicalZone, shortenLinkName } from "./node-connector/models";
+import { shortenLinkName } from "./node-connector/models";
+import type { PhysicalZone } from "./types";
 import { NodeConnector } from "./node-connector";
 
 type PlaceUnscheduledZonesArgs = {

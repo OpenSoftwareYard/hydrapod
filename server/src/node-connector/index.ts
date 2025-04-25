@@ -3,7 +3,8 @@ import * as path from "path";
 import * as process from "process";
 import type { Node, Service } from "@prisma/client";
 import { NodeSSH } from "node-ssh";
-import { PhysicalZone, Vnic } from "./models";
+import { Vnic } from "./models";
+import { type ListedZone, type PhysicalZone } from "../types";
 
 export class NodeConnector {
   constructor() {}
@@ -38,6 +39,51 @@ export class NodeConnector {
     };
 
     return Object.values(parsedZones).map((z) => z);
+  }
+
+  async listZones(node: Node) {
+    const ssh = await this.connect(node);
+    const listZonesScript = await fs.promises.readFile(
+      path.join(process.cwd(), "scripts", "ListZones.sh"),
+      "utf-8",
+    );
+    const result = await ssh.execCommand(listZonesScript);
+    ssh.dispose();
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+    const parsedZones = JSON.parse(result.stdout) as {
+      [key: string]: ListedZone;
+    };
+    return Object.entries(parsedZones).map(([k, z]) => ({
+      ...z,
+      id: k,
+    }));
+  }
+
+  async listZone(node: Node, zoneId: string) {
+    const ssh = await this.connect(node);
+    const listZonesScript = await fs.promises.readFile(
+      path.join(process.cwd(), "scripts", "ListZone.sh"),
+      "utf-8",
+    );
+    const result = await ssh.execCommand(
+      listZonesScript.replaceAll("$1", zoneId),
+    );
+
+    ssh.dispose();
+
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    const parsedZones = JSON.parse(result.stdout) as {
+      [key: string]: ListedZone;
+    };
+    return Object.entries(parsedZones).map(([k, z]) => ({
+      ...z,
+      id: k,
+    }))[0];
   }
 
   async getZone(node: Node, zoneId: string) {
@@ -188,5 +234,44 @@ export class NodeConnector {
     }
 
     return zone;
+  }
+  async bootZone(node: Node, zoneId: string) {
+    const ssh = await this.connect(node);
+    const bootZoneScript = await fs.promises.readFile(
+      path.join(process.cwd(), "scripts", "BootZone.sh"),
+      "utf-8",
+    );
+
+    const result = await ssh.execCommand(
+      bootZoneScript.replaceAll("$1", zoneId),
+    );
+
+    ssh.dispose();
+
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    return zoneId;
+  }
+
+  async stopZone(node: Node, zoneId: string) {
+    const ssh = await this.connect(node);
+    const stopZoneScript = await fs.promises.readFile(
+      path.join(process.cwd(), "scripts", "StopZone.sh"),
+      "utf-8",
+    );
+
+    const result = await ssh.execCommand(
+      stopZoneScript.replaceAll("$1", zoneId),
+    );
+
+    ssh.dispose();
+
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    return zoneId;
   }
 }

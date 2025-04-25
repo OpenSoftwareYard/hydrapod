@@ -41,3 +41,9 @@ systemctl mask run-rpc_pipefs.mount
 # Remove the divert that disables services
 rm -f /sbin/initctl
 dpkg-divert --local --rename --remove /sbin/initctl
+
+# Create the missing cgroup directories
+mkdir -p /sys/fs/cgroup/{systemd,cpuset,hugetlb,freezer,perf_event,net_cls,net_prio,pids,blkio,memory,devices,rdma}
+
+# Create the missing cgroup mount points
+touch /sys/fs/cgroup/memory/memory.limit_in_bytes
