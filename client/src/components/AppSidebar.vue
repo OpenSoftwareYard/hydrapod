@@ -26,15 +26,27 @@ import {
 
 import { useAuth0 } from '@auth0/auth0-vue'
 import { store } from '@/lib/store'
-import { computed, reactive } from 'vue'
+import { decodeToken, extractRoles, hasAdminRole } from '@/lib/auth'
+import { computed, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 const { user, getAccessTokenSilently } = useAuth0()
 
 let token: string | undefined
+const userRoles = ref<string[]>([])
+const decodedTokenRef = ref<any>(null)
+
+// Check if user has admin role
+const isAdmin = computed(() => {
+  return decodedTokenRef.value ? hasAdminRole(decodedTokenRef.value) : false
+})
 
 getAccessTokenSilently().then((accessToken) => {
   token = accessToken
+  // Decode token and extract roles
+  const decodedToken = decodeToken(accessToken)
+  decodedTokenRef.value = decodedToken
+  userRoles.value = extractRoles(decodedToken!)
   store.getUserOrgs(token).then(() => {})
 })
 
@@ -57,14 +69,16 @@ const activeTeam = computed(() => {
   })
 })
 
-// This is sample data.
-const data = reactive({
-  user: {
-    name: user.value!.name!,
-    email: user.value!.email!,
-    avatar: user.value!.picture!,
-  },
-  navMain: [
+// User data
+const userData = reactive({
+  name: user.value!.name!,
+  email: user.value!.email!,
+  avatar: user.value!.picture!,
+})
+
+// Navigation items as a computed property to ensure reactivity
+const navMain = computed(() => {
+  const baseItems = [
     {
       title: 'Compute',
       url: '#',
@@ -89,7 +103,31 @@ const data = reactive({
         },
       ],
     },
-  ],
+  ]
+
+  // Admin section - only visible to users with Admin role
+  if (isAdmin.value) {
+    baseItems.push({
+      title: 'Admin',
+      url: '#',
+      icon: Settings2,
+      isActive: false,
+      items: [
+        {
+          title: 'Manage Nodes',
+          url: `/admin/nodes`,
+        },
+      ],
+    })
+  }
+
+  return baseItems
+})
+
+// Data object for template
+const data = reactive({
+  user: userData,
+  navMain,
 })
 </script>
 
@@ -99,7 +137,7 @@ const data = reactive({
       <TeamSwitcher :teams="teams" :active-team="activeTeam" />
     </SidebarHeader>
     <SidebarContent>
-      <NavMain :items="data.navMain" />
+      <NavMain :items="navMain" />
     </SidebarContent>
     <SidebarFooter>
       <NavUser :user="data.user" />
