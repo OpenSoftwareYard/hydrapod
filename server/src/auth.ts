@@ -90,6 +90,16 @@ export const auth0Middleware =
           Buffer.from(token.split(".")[1], "base64").toString(),
         );
         req.headers["userId"] = decoded.sub;
+
+        // Extract roles from the token if available
+        if (decoded.permissions) {
+          req.headers["permissions"] = JSON.stringify(decoded.permissions);
+        }
+
+        // Extract roles from the token if available
+        if (decoded["chyve-dev/roles"]) {
+          req.headers["roles"] = JSON.stringify(decoded["chyve-dev/roles"]);
+        }
       } catch (error) {
         console.error("Error decoding JWT: ", error);
       }
@@ -106,6 +116,40 @@ export const auth0Middleware =
       issuer: process.env.AUTH0_DOMAIN,
       algorithms: ["RS256"],
     })(req, res, next);
+  };
+
+// Type definition for middleware functions
+export type MiddlewareFunction = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => Promise<void>;
+
+// Middleware to check if the user has admin role
+export const adminMiddleware =
+  (): MiddlewareFunction =>
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const roles = req.headers["roles"];
+
+    if (!roles) {
+      res.status(403).json({ error: "Access denied. No roles found." });
+      return;
+    }
+
+    try {
+      const userRoles = JSON.parse(roles as string);
+      if (Array.isArray(userRoles) && userRoles.includes("Admin")) {
+        next();
+        return;
+      }
+
+      res.status(403).json({ error: "Access denied. Admin role required." });
+      return;
+    } catch (error) {
+      console.error("Error parsing roles:", error);
+      res.status(403).json({ error: "Access denied. Invalid roles format." });
+      return;
+    }
   };
 
 export const apiKeyMiddleware =

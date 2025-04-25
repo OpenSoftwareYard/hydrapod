@@ -2,11 +2,10 @@ import { Request as JWTRequest } from "express-jwt";
 import { NextFunction, Request, Response, Router } from "express";
 import type { ExtendedPrismaClient } from "../db";
 import { ZoneStatus } from "../types";
+import { MiddlewareFunction } from "../auth";
 
 type SetupZoneRoutesArgs = {
-  multipleAuthMiddleware: {
-    (req: Request, res: Response, next: NextFunction): Promise<void>;
-  };
+  multipleAuthMiddleware: MiddlewareFunction;
   prisma: ExtendedPrismaClient;
 };
 
