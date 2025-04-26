@@ -139,6 +139,22 @@ const totalPages = computed(() => table.getPageCount())
                     <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                   </div>
                 </template>
+                <!-- Special styling for health column -->
+                <template v-else-if="cell.column.id === 'health'">
+                  <div
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300':
+                        cell.getValue() === 'online',
+                      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300':
+                        cell.getValue() === 'offline',
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300':
+                        cell.getValue() !== 'online' && cell.getValue() !== 'offline',
+                    }"
+                  >
+                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                  </div>
+                </template>
                 <template v-else>
                   <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                 </template>

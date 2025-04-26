@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { store } from '@/lib/store'
 import { useAuth0 } from '@auth0/auth0-vue'
 import { useRouter } from 'vue-router'
@@ -13,14 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable, nodeColumns } from '@/components/data-table'
 import type { Node } from '@/lib/types'
 
 const router = useRouter()
@@ -47,15 +40,40 @@ const nodeForm = ref({
 })
 
 // Load nodes on component mount
+// Event handler functions
+const handleEditNode = ((event: CustomEvent) => {
+  openEditDialog(event.detail)
+}) as EventListener
+
+const handleViewNodeZones = ((event: CustomEvent) => {
+  viewNodeZones(event.detail)
+}) as EventListener
+
+const handleDeleteNode = ((event: CustomEvent) => {
+  deleteNode(event.detail)
+}) as EventListener
+
 onMounted(async () => {
   try {
     const token = await getAccessTokenSilently()
     await store.getNodes(token)
+
+    // Set up event listeners for DataTable actions
+    window.addEventListener('edit-node', handleEditNode)
+    window.addEventListener('view-node-zones', handleViewNodeZones)
+    window.addEventListener('delete-node', handleDeleteNode)
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
   } finally {
     isLoading.value = false
   }
+})
+
+// Clean up event listeners when component is unmounted
+onUnmounted(() => {
+  window.removeEventListener('edit-node', handleEditNode)
+  window.removeEventListener('view-node-zones', handleViewNodeZones)
+  window.removeEventListener('delete-node', handleDeleteNode)
 })
 
 // Open dialog for creating a new node
@@ -172,49 +190,7 @@ function viewNodeZones(nodeId: string) {
       </div>
 
       <div v-else>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Address</TableHead>
-              <TableHead>Port</TableHead>
-              <TableHead>CPU</TableHead>
-              <TableHead>RAM (GB)</TableHead>
-              <TableHead>Disk (GB)</TableHead>
-              <TableHead>Health</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="node in store.nodes" :key="node.id">
-              <TableCell>{{ node.address }}</TableCell>
-              <TableCell>{{ node.port }}</TableCell>
-              <TableCell>{{ node.totalCpu }}</TableCell>
-              <TableCell>{{ node.totalRamGB }}</TableCell>
-              <TableCell>{{ node.totalDiskGB }}</TableCell>
-              <TableCell>
-                <span
-                  :class="{
-                    'px-2 py-1 rounded text-xs font-medium': true,
-                    'bg-green-100 text-green-800': node.health === 'healthy',
-                    'bg-red-100 text-red-800': node.health === 'unhealthy',
-                    'bg-yellow-100 text-yellow-800': node.health === 'warning' || !node.health,
-                  }"
-                >
-                  {{ node.health || 'Unknown' }}
-                </span>
-              </TableCell>
-              <TableCell>
-                <div class="flex space-x-2">
-                  <Button variant="outline" size="sm" @click="openEditDialog(node)">Edit</Button>
-                  <Button variant="outline" size="sm" @click="viewNodeZones(node.id)">Zones</Button>
-                  <Button variant="destructive" size="sm" @click="deleteNode(node.id)"
-                    >Delete</Button
-                  >
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <DataTable :columns="nodeColumns" :data="store.nodes" />
       </div>
     </div>
 

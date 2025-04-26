@@ -4,14 +4,7 @@ import { store } from '@/lib/store'
 import { useAuth0 } from '@auth0/auth0-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable, zoneColumns } from '@/components/data-table'
 import type { Node, PhysicalZone } from '@/lib/types'
 
 const route = useRoute()
@@ -64,35 +57,7 @@ function goBack() {
       </div>
 
       <div v-else>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Brand</TableHead>
-              <TableHead>CPU</TableHead>
-              <TableHead>RAM (GB)</TableHead>
-              <!-- <TableHead>Status</TableHead> -->
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="zone in zones" :key="zone.zonename">
-              <TableCell>{{ zone.zonename }}</TableCell>
-              <TableCell>{{ zone.brand }}</TableCell>
-              <TableCell>{{ zone['capped-cpu']?.ncpus }}</TableCell>
-              <TableCell>{{ zone['capped-memory']?.physical }}</TableCell>
-              <!-- <TableCell>
-                <span :class="{
-                  'px-2 py-1 rounded text-xs font-medium': true,
-                  'bg-green-100 text-green-800': zone.status === 'running',
-                  'bg-red-100 text-red-800': zone.status === 'stopped',
-                  'bg-yellow-100 text-yellow-800': zone.status === 'pending' || zone.status === 'unknown'
-                }">
-                  {{ zone.status }}
-                </span>
-              </TableCell> -->
-            </TableRow>
-          </TableBody>
-        </Table>
+        <DataTable :columns="zoneColumns" :data="zones" />
       </div>
     </div>
   </div>
